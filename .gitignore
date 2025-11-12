@@ -1,0 +1,8 @@
+# Ignore VS Code workspace settings and build artifacts for ReverbZpatch
+ReverbZpatch/.vscode/
+ReverbZpatch/build/
+
+# If you want to ignore .vscode or build folders for other projects,
+# you can uncomment these more general patterns:
+# .vscode/
+# */build/
