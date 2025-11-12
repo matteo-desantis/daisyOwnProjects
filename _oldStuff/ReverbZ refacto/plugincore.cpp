@@ -113,9 +113,9 @@ bool PluginCore::initPluginParameters()
     addPluginParameter(piParam);
     
     // Tank decay control
-        piParam = new PluginParameter(controlID::decay, "Decay", "", controlVariableType::kDouble, 0.000000, 0.850000, 0.500000, taper::kLinearTaper);
-        piParam->setBoundVariable(&mTankDecayCtrl, boundVariableType::kDouble);
-        addPluginParameter(piParam);
+    piParam = new PluginParameter(controlID::decay, "Decay", "", controlVariableType::kDouble, 0.000000, 0.850000, 0.500000, taper::kLinearTaper);
+    piParam->setBoundVariable(&mTankDecayCtrl, boundVariableType::kDouble);
+    addPluginParameter(piParam);
    
     // Saturation amount control
     piParam = new PluginParameter(controlID::drive, "Drive", "dB", controlVariableType::kDouble, 0.100000, 20.000000, 0.100000, taper::kLinearTaper);

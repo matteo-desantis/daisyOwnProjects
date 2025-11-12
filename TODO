@@ -1,0 +1,10 @@
+PATCH.INIT():    
+    dspLib:
+        ☐ LFO init with other waveforms, see `LFO.cpp`
+
+
+    OwnProjects/_projLib/ReverbZ:
+        - See TODO:s in ReverbZ.cpp and ReverbZ.hpp
+
+    OwnProjects/ReverbZpatch:
+        - TODO: implementation using ReverbZ class. 
