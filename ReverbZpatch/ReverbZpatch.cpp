@@ -11,9 +11,6 @@ using namespace patch_sm;
 using namespace daisysp;
 using namespace projLib;
 
-#ifndef FS_REVERBZ
-#define FS_REVERBZ 48000
-#endif
 
 /** Our hardware board class handles the interface to the actual DaisyPatchSM
  * hardware. */
@@ -21,8 +18,15 @@ DaisyPatchSM patch;
 /* HW Objects */
 Switch button;
 
-/** ReverbZ reverb processor instance */
-ReverbZ reverbz(FS_REVERBZ);  // Initialize with fixed sample rate of 48kHz
+/* Environment Constants */
+const int FS_REVERBZ = 48000;  // ReverbZ fixed sample rate
+
+/** ReverbZ reverb processor instance
+ *  NOTE: constructing this at global/static init time may access memory
+ *  (buffers in external SDRAM) before the system/clocks/SDRAM are configured,
+ *  which causes a HardFault during reset. Delay construction until main().
+ */
+ReverbZ* reverbz = nullptr; // will be created in main()
 
 /* Control Parameters for ReverbZ */
 double predelayTimeCtrl = 00.0;          // in ms
@@ -93,18 +97,25 @@ void AudioCallback(AudioHandle::InputBuffer  in,
         /* TODO: Retrieve, compute and set ReverbZ parameters */
 
         /* Process Audio */
-        reverbz.processAudioStereo(in[0][i], in[1][i]);  // Process stereo input
-        out[0][i] = reverbz.mOutL;          // Left output
-        out[1][i] = reverbz.mOutR;          // Right output
+        // reverbz is constructed in main() after system init. Guard in case
+        // audio callback runs before initialization (shouldn't normally).
+        if(reverbz)
+        {
+            reverbz->processAudioStereo(in[0][i], in[1][i]);  // Process stereo input
+            out[0][i] = reverbz->mOutL;          // Left output
+            out[1][i] = reverbz->mOutR;          // Right output
+        }
+        else
+        {
+            out[0][i] = 0.0f;
+            out[1][i] = 0.0f;
+        }
     }
 }
 
 int main(void)
 {
     /** Initialize main variables */
-    bool ledState = false;
-    bool buttonState = false;
-    int ledWaitTime = 500;      // in ms
     int mainLoopWaitTime = 1;   // in ms
     int mainLoopCounter = 0;
 
@@ -114,18 +125,29 @@ int main(void)
 
     /** Initialize the hardware */
     const float maxCvOut = 5.0f;
+    bool ledState = false;
+    bool buttonState = false;
+    bool isShortBlinking = true;
+    int ledWaitTimeShort = 100;      // in ms
+    int ledWaitTimeLong = 500;       // in ms
+    int nBlinksMax = 1;              // Max short blinks per params page
+    int nBlinks = 0;                 // Counter of short blinks
+
     patch.Init();
+
+    //reverbz = new ReverbZ(FS_REVERBZ);
+
     // TODO: init all hw
     /* Initialize the switch on pin B7 */
     button.Init(patch.B7);
 
 
-    /* Set Audio parameters */
-    patch.SetAudioSampleRate(FS_REVERBZ); // Set sample rate to 48kHz
-    patch.SetAudioBlockSize(4);           // Set block size to 4 samples
+    // /* Set Audio parameters */
+    // patch.SetAudioSampleRate(FS_REVERBZ); // Set sample rate to 48kHz
+    // patch.SetAudioBlockSize(4);           // Set block size to 4 samples
 
-    /** Start Processing the audio */
-    patch.StartAudio(AudioCallback);
+    // /** Start Processing the audio */
+    // patch.StartAudio(AudioCallback);
 
     /** Main loop */
     while(1) 
@@ -137,38 +159,67 @@ int main(void)
         if(buttonState && !button.Pressed())
         {
             paramsPage = (paramsPage + 1) % nParamsPages; // Cycle through 3 pages
+
+            // Reset LED blinking pattern
+            nBlinks = 0; // Reset blink counter
+            isShortBlinking = true;
+            ledState = false;
+
+            // Reset main loop counter
+            mainLoopCounter = 0;
         }
 
-        // TODO: Read potentiometers and map to control parameters based on paramsPage
+        // // TODO: Read potentiometers and map to control parameters based on paramsPage
 
         /* ------ LED Blinking based on params page ------ */
-        if(paramsPage == 0)
-        {
-            ledWaitTime = 500; // Slow blink
-        }
-        else if(paramsPage == 1)
-        {
-            ledWaitTime = 300; // Mid blink
-        }
-        else if(paramsPage == 2)
-        {
-            ledWaitTime = 100; // Fast blink
-        }
+        if(paramsPage == 0)      {nBlinksMax = 1;}
+        else if(paramsPage == 1) {nBlinksMax = 2;}
+        else if(paramsPage == 2) {nBlinksMax = 3;}
 
-        // Toggle the LED state for the next time around.
-        if (mainLoopCounter >= ledWaitTime)
+        // Short and long blinking pattern
+        if (isShortBlinking)
         {
-            // If the wait time has elapsed, toggle the LED and reset the counter
-            mainLoopCounter = 0;
-            ledState = !ledState;
-
-            // // Set the onboard LED
-            // patch.SetLed(ledState);
-
+            // Short blink
+            if (nBlinks < nBlinksMax*2)
+            {
+                if (mainLoopCounter == 0)
+                {
+                    // Set the CV_OUT_2 to set the front panel the LED state (0V for off, 5V for on)
+                    patch.WriteCvOut(CV_OUT_2, ledState ? 0.0f : maxCvOut);
+                }
+                else if (mainLoopCounter >= ledWaitTimeShort)
+                {
+                    // If the wait time has elapsed, toggle the LED and reset the counters
+                    mainLoopCounter = -1; // will be incremented to 0 at end of loop
+                    nBlinks++;
+                    ledState = !ledState;
+                }
+            }
+            else
+            {
+                // Switch to long blink after max short blinks
+                isShortBlinking = false;
+                nBlinks = 0; 
+            }
         }
+        else
+        {
+            // Final wait time (LED off)
+            if (mainLoopCounter == 0)
+            {
+                // Set the CV_OUT_2 to set the front panel the LED state (0.0V for off)
+                patch.WriteCvOut(CV_OUT_2, maxCvOut);
+            }
+            else if (mainLoopCounter >= ledWaitTimeLong)
+            {
+                // If the wait time has elapsed, toggle the LED and reset the counter
+                mainLoopCounter = -1;   // 
 
-        // Set the CV_OUT_2 to set the front panel the LED state (0V for off, 5V for on)
-        patch.WriteCvOut(CV_OUT_2, ledState ? maxCvOut : 0.0f);
+                // Reset for next time
+                isShortBlinking = true;
+                ledState = false;
+            }
+        }
 
         // Wait
         System::Delay(mainLoopWaitTime);
