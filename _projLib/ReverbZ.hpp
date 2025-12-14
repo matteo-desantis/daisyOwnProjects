@@ -15,160 +15,147 @@
 // Include used dspLib components
 #include "../../dspLib/AllPass.hpp"
 #include "../../dspLib/DelayLine.hpp"  
-#include "../../dspLib/DeZipper.hpp"           
 #include "../../dspLib/OnePoleFilter.hpp"
 #include "../../dspLib/Saturator.hpp"
 #include "../../dspLib/mathUtils.hpp"
 
-using namespace dspLib;
-
 namespace projLib {
 
+template<std::size_t MaxSamples>
 class ReverbZ {
     public:
         ReverbZ(int sampleRate);
         ~ReverbZ();
 
         void init();
-        void processAudioMono(double inputSample);
-        void processAudioStereo(double inputSampleL, double inputSampleR);
-        void setControlParameters(double predelayTime,
-                                  double inputLowpassFc,
-                                  double inputHighpassFc,
-                                  double inputDiffusion,
-                                  double decay,
-                                  double drive,
-                                  double hfDamping,
-                                  double lfDamping,
-                                  double mixPercentage,
+        void processAudioMono(float inputSample);
+        void processAudioStereo(float inputSampleL, float inputSampleR);
+        void setControlParameters(float predelayTime,
+                                  float inputLowpassFc,
+                                  float inputHighpassFc,
+                                  float inputDiffusion,
+                                  float decay,
+                                  float drive,
+                                  float hfDamping,
+                                  float lfDamping,
+                                  float mixPercentage,
                                   int smooth);
 
         // Dry-Wet Mix outputs
-        double mOutL, mOutR, mOutMono;
+        float mOutL, mOutR, mOutMono;
     private:
-        void processAudioPrivate(double inputSample);
+        void processAudioPrivate(float inputSample);
 
         /* ----------------------------- Outputs ---------------------------- */
         // FX 100% wet outputs
-        double mOutWetL, mOutWetR;
+        float mOutWetL_, mOutWetR_;
 
 
 
         /* ------------------------------------------------------------------ */
         /*         All internal dspLib components as member variables         */
         /* ------------------------------------------------------------------ */
-        double mFs;                                     // Project's sampling frequency
-        const double mFsDattorro = 29761;                     // Dattorro's original sampling frequency
-        const double mBufferScaleFactor = 1.0;                // Buffer scale factor for adapting delay lengths to different sample rates
-
-        // DeZippers for changing-parameters
-        dspLib::DeZipper mDeZipperPredelaySamples;
-        dspLib::DeZipper mDeZipperInputLowpassNormWc;
-        dspLib::DeZipper mDeZipperInputHighpassNormWc;
-        dspLib::DeZipper mDeZipperInputDiffusionAllpass1;
-        dspLib::DeZipper mDeZipperInputDiffusionAllpass3;
-        dspLib::DeZipper mDeZipperDecay;
-        dspLib::DeZipper mDeZipperSaturationDrive;
-        dspLib::DeZipper mDeZipperTankLowpassNormWc;
-        dspLib::DeZipper mDeZipperTankHighpassNormWc;
-        dspLib::DeZipper mDeZipperTankAllpassDiffusion;
-        dspLib::DeZipper mDeZipperDryWetMix;
+        int mFs_;                                       // Project's sampling frequency
+        const int mFsDattorro_ = 29761;                 // Dattorro's original sampling frequency
 
         /* ---------------------------- INPUT SECTION --------------------------- */
         // Predelay - DelayLine Object
-        dspLib::DelayLine mPredelay;                           
-        double mPredelayTime = 0.000000;
-        double mPredelayOut;                            // delay line out
+        dspLib::DelayLine<MaxSamples> mPredelay_;                           
+        float mPredelayTime_ = 0.0f;
+        float mPredelayOut_;                            // delay line out
         
         // Input Lowpass Filter    
-        dspLib::OnePoleFilter mInputLowpass;                          
-        double mInputLowpassOut;                        // filter output
+        dspLib::OnePoleFilter mInputLowpass_;                          
+        float mInputLowpassOut_;                        // filter output
         
         // Input Highpass Filter
-        dspLib::OnePoleFilter mInputHighpass;           // input highpass variables
-        double mInputHighpassOut;                       // filter output
+        dspLib::OnePoleFilter mInputHighpass_;          // input highpass variables
+        float mInputHighpassOut_;                       // filter output
         
         // Input Diffusers - AllPass Objects
-        dspLib::AllPass mInputAllpass1;                 // input diffusion all-passes variables
-        double mInputAllpass1Out;                       // filter output
+        dspLib::AllPass<MaxSamples> mInputAllpass1_;    // input diffusion all-passes variables
+        float mInputAllpass1Out_;                       // filter output
     
-        dspLib::AllPass mInputAllpass2;
-        double mInputAllpass2Out;
+        dspLib::AllPass<MaxSamples> mInputAllpass2_;
+        float mInputAllpass2Out_;
         
-        dspLib::AllPass mInputAllpass3;
-        double mInputAllpass3Out;
+        dspLib::AllPass<MaxSamples> mInputAllpass3_;
+        float mInputAllpass3Out_;
         
-        dspLib::AllPass mInputAllpass4;
-        double mInputAllPass4Out;
+        dspLib::AllPass<MaxSamples> mInputAllpass4_;
+        float mInputAllPass4Out_;
     
         /* ---------------------------- TANK SECTION --------------------------- */
         // Tank Inputs, Accumulators and Parameters
-        double mTankInput1 = 0.0;                       // tank inputs initialised to 0.0
-        double mTankInput2 = 0.0;
-        double mTankAccumulator1 = 0.0;                 // tank accumulators initialised to 0.0
-        double mTankAccumulator2 = 0.0;
-        double mTankDecay;
+        float mTankInput1_ = 0.0f;                      // tank inputs initialised to 0.0
+        float mTankInput2_ = 0.0f;
+        float mTankAccumulator1_ = 0.0f;                // tank accumulators initialised to 0.0
+        float mTankAccumulator2_ = 0.0f;
+        float mTankDecay_ = 0.5f;                       // tank decay control
         
         // Tank Allpasses with delayline modulation
-        dspLib::AllPass mModAllpass1;                   // modulated tank allpass filters
-        double mModAllpass1Out;
+        dspLib::AllPass<MaxSamples> mModAllpass1_;      // modulated tank allpass filters
+        float mModAllpass1Out_;
         
-        dspLib::AllPass mModAllpass2;
-        double mModAllpass2Out;
+        dspLib::AllPass<MaxSamples> mModAllpass2_;
+        float mModAllpass2Out_;
         
-        dspLib::DelayLine mTankDelay1;                  // tank delaylines 1 and 3
-        double mTankDelay1Out;
+        dspLib::DelayLine<MaxSamples> mTankDelay1_;     // tank delaylines 1 and 3
+        float mTankDelay1Out_;
         
-        dspLib::DelayLine mTankDelay3;
-        double mTankDelay3Out;
+        dspLib::DelayLine<MaxSamples> mTankDelay3_;
+        float mTankDelay3Out_;
         
-        dspLib::Saturator mSaturator;
-        double mSaturator1Out;
-        double mSaturator2Out;
+        dspLib::Saturator mSaturator_;
+        float mSaturator1Out_;
+        float mSaturator2Out_;
         
-        dspLib::OnePoleFilter mTankLowpass1;            // tank hf damping
-        double mTankLowpass1Out;
+        dspLib::OnePoleFilter mTankLowpass1_;           // tank hf damping
+        float mTankLowpass1Out_;
         
-        dspLib::OnePoleFilter mTankLowpass2;
-        double mTankLowpass2Out;
+        dspLib::OnePoleFilter mTankLowpass2_;
+        float mTankLowpass2Out_;
         
-        dspLib::OnePoleFilter mTankHighpass1;           // tank highpass
-        double mTankHighpass1Out;
+        dspLib::OnePoleFilter mTankHighpass1_;          // tank highpass
+        float mTankHighpass1Out_;
         
-        dspLib::OnePoleFilter mTankHighpass2;
-        double mTankHighpass2Out;
+        dspLib::OnePoleFilter mTankHighpass2_;
+        float mTankHighpass2Out_;
         
-        dspLib::AllPass mTankAllpass5;
-        double mTankAllpass5Out;
+        dspLib::AllPass<MaxSamples> mTankAllpass5_;
+        float mTankAllpass5Out_;
         
-        dspLib::AllPass mTankAllpass6;
-        double mTankAllpass6Out;
+        dspLib::AllPass<MaxSamples> mTankAllpass6_;
+        float mTankAllpass6Out_;
         
-        dspLib::DelayLine mTankDelay2;
-        double mTankDelay2Out;
+        dspLib::DelayLine<MaxSamples> mTankDelay2_;
+        float mTankDelay2Out_;
         
-        dspLib::DelayLine mTankDelay4;
-        double mTankDelay4Out;
+        dspLib::DelayLine<MaxSamples> mTankDelay4_;
+        float mTankDelay4Out_;
 
         /* ----------------------- SMOOTH TANK SECTION ----------------------- */
-        int mIsSmoothed = 0;
+        int mIsSmoothed_ = 0;
         
-        dspLib::AllPass mTankAllpass7;
-        double mTankAllpass7Out;
+        dspLib::AllPass<MaxSamples> mTankAllpass7_;
+        float mTankAllpass7Out_;
         
-        dspLib::AllPass mTankAllpass8;
-        double mTankAllpass8Out;
+        dspLib::AllPass<MaxSamples> mTankAllpass8_;
+        float mTankAllpass8Out_;
         
-        dspLib::AllPass mTankAllpass9;
-        double mTankAllpass9Out;
+        dspLib::AllPass<MaxSamples> mTankAllpass9_;
+        float mTankAllpass9Out_;
         
-        dspLib::AllPass mTankAllpass10;
-        double mTankAllpass10Out;
+        dspLib::AllPass<MaxSamples> mTankAllpass10_;
+        float mTankAllpass10Out_;
         
         /* ------------------------------ DRY / WET ----------------------------- */
-        double mDryWetMix;
+        float mDryWetMix_;
 };
 
 }   // namespace projLib
+
+/* Include Implentation file */
+#include "ReverbZ.tpp"
 
 #endif /* ReverbZ_hpp */

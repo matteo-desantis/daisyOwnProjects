@@ -28,6 +28,44 @@ make -C /Users/matteodesantis/EurorackProgramming/Git/DaisyDev/OwnProjects/Rever
 make -C /Users/matteodesantis/EurorackProgramming/Git/DaisyDev/OwnProjects/ReverbZpatch clean all program
 ```
 
+DEBUG BUILD (No Optimization):
+```bash
+# libDaisy
+make -C /Users/matteodesantis/EurorackProgramming/Git/DaisyDev/libDaisy clean
+OPT='-O0 -g3' make -C /Users/matteodesantis/EurorackProgramming/Git/DaisyDev/libDaisy
+
+# DaisySP
+make -C /Users/matteodesantis/EurorackProgramming/Git/DaisyDev/DaisySP clean
+OPT='-O0 -g3' make -C /Users/matteodesantis/EurorackProgramming/Git/DaisyDev/DaisySP
+
+# dspLib -- > skip build, it is not configured and built by ReverbZpatch
+make -C /Users/matteodesantis/EurorackProgramming/Git/DaisyDev/dspLib clean
+OPT='-O0 -g3' make -C /Users/matteodesantis/EurorackProgramming/Git/DaisyDev/dspLib
+
+# ReverbZpatch
+make -C /Users/matteodesantis/EurorackProgramming/Git/DaisyDev/OwnProjects/ReverbZpatch clean
+BUILD_TYPE=debug make -C /Users/matteodesantis/EurorackProgramming/Git/DaisyDev/OwnProjects/ReverbZpatch all
+```
+
+Release Build (Optimized - for production)
+```bash
+# libDaisy
+make -C /Users/matteodesantis/EurorackProgramming/Git/DaisyDev/libDaisy clean
+make -C /Users/matteodesantis/EurorackProgramming/Git/DaisyDev/libDaisy
+
+# DaisySP
+make -C /Users/matteodesantis/EurorackProgramming/Git/DaisyDev/DaisySP clean
+make -C /Users/matteodesantis/EurorackProgramming/Git/DaisyDev/DaisySP
+
+# dspLib
+make -C /Users/matteodesantis/EurorackProgramming/Git/DaisyDev/dspLib clean
+BUILD_TYPE=release make -C /Users/matteodesantis/EurorackProgramming/Git/DaisyDev/dspLib
+
+# ReverbZpatch
+make -C /Users/matteodesantis/EurorackProgramming/Git/DaisyDev/OwnProjects/ReverbZpatch clean
+BUILD_TYPE=release make -C /Users/matteodesantis/EurorackProgramming/Git/DaisyDev/OwnProjects/ReverbZpatch all
+```
+
 ## Controls
 
 None

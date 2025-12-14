@@ -1,10 +1,33 @@
 PATCH.INIT():    
     dspLib:
-        ☐ LFO init with other waveforms, see `LFO.cpp`
+        ☐ Oscillator init with other waveforms, see `LFO.cpp`
+        ✔ LFO should be refactored from array based to oscillator based on phase calculation per sample (no memory). @done(25-11-23 18:13) Renamed to Oscillator
+
+        ✔ Template parameter for buffer size to be defined in a common header file. @done(25-12-11 01:36)
+        ✔ RingBuffer.hpp, RingBuffer.tpp: updated to use templates with static array instead of dynamic allocation. Reduced to one single constructor. Removed .cpp and moved template implementation to .tpp file. @done(25-11-20 00:29)
+        ✔ LFO.hpp, LFO.tpp: updated to use templates with static array instead of dynamic allocation. Reduced to one single constructor. Removed .cpp and moved template implementation to .tpp file. @done(25-11-20 00:29)
+        ✔ DelayLine.hpp, DelayLine.tpp: updated to use templates with static array instead of dynamic allocation. Reduced to one single constructor. Removed .cpp and moved template implementation to .tpp file. @done(25-11-22 00:29)
+        ✔ AllPass.hpp, AllPass.tpp: updated to use templates with static array instead of dynamic allocation. Reduced to one single constructor. Removed .cpp and moved template implementation to .tpp file. @done(25-11-22 00:29)
+
+        - RingBuffer: could add read/write buffer function, and refactor where used. 
+
+        ✔ Changed from double precision to single precision floats @done(25-11-24 00:45)
+
+        ✔ Init buffers in SDRAM region (arena method?). See SDRAM_instructions.md, and RingBuffer.hpp @done(25-12-11 01:37)
+            
+
 
 
     OwnProjects/_projLib/ReverbZ:
-        - See TODO:s in ReverbZ.cpp and ReverbZ.hpp
+        ✔ Refactored to template with static arrays for buffer sizes. @done(25-11-23 03:01)
+        ✔ Change from double precision to single precision floats @done(25-11-24 00:45)
+        ReverbZv2:
+            - Diffusion (or other control) controls delay times also -> might need to adjust global buffer length if delay times grow.
+            - Mix law should be dB based or power based.
+            - Decay Control and drive to be interdependetent. Also control the full wet output level
+            - cotrol for mod depth (and rate maybe?)
+            
 
     OwnProjects/ReverbZpatch:
-        - TODO: implementation using ReverbZ class. 
+        - Add sampling rate to dspConfig.hpp? would require some refactor in ReverbZ class to pass it down to internal objects.
+        ✔ added dspConfig.hpp file with DSPLIB_MAX_BUFFER_SIZE definition @done(25-11-18 01:48)

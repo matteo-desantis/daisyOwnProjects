@@ -1,9 +1,22 @@
+# --------------------- Makefile for ReverbZpatch project -------------------- #
+
 # Project Name
 TARGET = ReverbZpatch
 
+# Build type: release or debug
+BUILD_TYPE ?= release
+
+ifeq ($(BUILD_TYPE),debug)
+    OPT = -O0 -g3
+    LDFLAGS += -specs=rdimon.specs
+    C_DEFS += -DDEBUG
+else
+    OPT = -O2
+endif
+
 # Sources
-CPP_SOURCES = ReverbZpatch.cpp \
-			  ../_projLib/ReverbZ.cpp
+# Only compile .cpp sources.
+CPP_SOURCES = ReverbZpatch.cpp
 
 # Library Locations
 LIBDAISY_DIR = ../../libDaisy/
